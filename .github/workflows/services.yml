@@ -1,0 +1,29 @@
+name: "Services"
+on:
+  - workflow_dispatch
+  - push
+
+env:
+  TAG: "${{ github.ref_name }}-${{ github.sha }}"
+  NAKA_LOC: /home/llm-hub
+
+jobs:
+  build:
+    runs-on: [self-hosted, zion]
+    environment: build
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          docker compose -f docker-compose.build.yml build
+          docker push 
+
+  dev:
+    runs-on: [self-hosted, zion]
+    environment: dev
+    steps:
+      - run: |
+          ssh -o StrictHostKeyChecking=no -l ${{ vars.RUNNER_USERNAME }} ${{ vars.NAKA_SSH }} \
+            "cd $NAKA_LOC && \
+            TAG=$TAG docker-compose pull && \
+            TAG=$TAG docker-compose up -d"
+
